@@ -1,0 +1,23 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
+    <PackageId>JustLogger</PackageId>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <Description>Simple file and console loggers</Description>
+    <Version>1.0.1</Version>
+    <Authors>Axio</Authors>
+    <Company>Axio.Lab</Company>
+    <LangVersion>latest</LangVersion>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="_nuget-push.bat" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Toolkit\" />
+  </ItemGroup>
+
+</Project>
