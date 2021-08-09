@@ -5,11 +5,10 @@
     <PackageId>JustLogger</PackageId>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <Description>Simple file and console loggers</Description>
-    <Version>1.0.1</Version>
+    <Version>$(Version)</Version>
     <Authors>Axio</Authors>
     <Company>Axio.Lab</Company>
     <LangVersion>latest</LangVersion>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
   </PropertyGroup>
 
   <ItemGroup>
