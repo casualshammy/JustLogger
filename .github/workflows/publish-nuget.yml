@@ -31,7 +31,7 @@ jobs:
       uses: dawidd6/action-get-tag@v1
       
     - name: Pack
-      run: dotnet pack -c Release /p:Version=${{steps.tag.outputs.tag}}
+      run: dotnet pack -c Release /p:Version=${{steps.tag.outputs.tag}} -o redist
     
     - name: Publish nuget
-      run: dotnet nuget push bin\Release\*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
+      run: dotnet nuget push redist\*.nupkg --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
