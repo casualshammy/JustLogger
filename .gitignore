@@ -7,3 +7,4 @@
 /JustLogger/obj/Debug
 /JustLogger/obj/Release
 /JustLogger/obj
+/JustLogger/redist/*.nupkg

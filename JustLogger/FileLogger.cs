@@ -79,7 +79,7 @@ namespace JustLogger
 
             p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
 
-            p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, $"{text}\n{_ex.GetType()}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
+            p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, $"{text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
         }
 
         public void Warn(string text, string name = null)

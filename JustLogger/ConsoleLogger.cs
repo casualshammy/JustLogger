@@ -46,7 +46,7 @@ namespace JustLogger
                 throw new ArgumentNullException(paramName: nameof(_ex));
 
             p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
-            WriteInConsole(new LogEntry(LogEntryType.ERROR, $"{text}\n{_ex.GetType()}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
+            WriteInConsole(new LogEntry(LogEntryType.ERROR, $"{text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
         }
 
         public void Warn(string text, string name = null)
