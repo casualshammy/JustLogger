@@ -16,4 +16,7 @@ consoleLogger.Info("Writing to file...");
 
 using var compLogger = new CompositeLogger(consoleLogger, fileLogger);
 compLogger.Info("This text will be written to both console and file");
+
+var namedLogger = compLogger["module name"];
+namedLogger.Info("Hello world!"); // will produce '[module name] Hello world!' string
 ```
