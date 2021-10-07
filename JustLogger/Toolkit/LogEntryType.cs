@@ -1,4 +1,5 @@
-﻿namespace JustLogger.Toolkit
+﻿#nullable enable
+namespace JustLogger.Toolkit
 {
     public enum LogEntryType
     {

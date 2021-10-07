@@ -1,4 +1,5 @@
-﻿using JustLogger.Interfaces;
+﻿#nullable enable
+using JustLogger.Interfaces;
 using JustLogger.Toolkit;
 using System;
 using System.Collections.Concurrent;
@@ -16,28 +17,28 @@ namespace JustLogger
             p_loggers = loggers;
         }
 
-        public void Error(string text, string name = null)
+        public void Error(string text, string? name = null)
         {
             p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
             foreach (ILogger logger in p_loggers)
                 logger.Error(text, name);
         }
 
-        public void Error(string text, Exception _ex, string name = null)
+        public void Error(string text, Exception _ex, string? name = null)
         {
             p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
             foreach (ILogger logger in p_loggers)
                 logger.Error(text, _ex, name);
         }
 
-        public void Info(string text, string name = null)
+        public void Info(string text, string? name = null)
         {
             p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, prevValue) => ++prevValue);
             foreach (ILogger logger in p_loggers)
                 logger.Info(text, name);
         }
 
-        public void Warn(string text, string name = null)
+        public void Warn(string text, string? name = null)
         {
             p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, prevValue) => ++prevValue);
             foreach (ILogger logger in p_loggers)

@@ -1,4 +1,5 @@
-﻿using JustLogger.Interfaces;
+﻿#nullable enable
+using JustLogger.Interfaces;
 using JustLogger.Toolkit;
 using System;
 using System.Collections.Concurrent;
@@ -18,10 +19,10 @@ namespace JustLogger
         private bool p_disposedValue;
         private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
         private readonly Timer p_timer;
-        private readonly Action<Exception, IEnumerable<string>> p_onErrorHandler;
+        private readonly Action<Exception, IEnumerable<string>>? p_onErrorHandler;
         private readonly HashSet<string> p_filesWrote = new();
 
-        public FileLogger(string filename, uint bufferLengthMs, Action<Exception, IEnumerable<string>> onError)
+        public FileLogger(string filename, uint bufferLengthMs, Action<Exception, IEnumerable<string>>? onError)
         {
             if (string.IsNullOrWhiteSpace(filename))
                 throw new ArgumentException($"'{nameof(filename)}' cannot be null or whitespace.", nameof(filename));
@@ -33,7 +34,7 @@ namespace JustLogger
             p_timer.Start();
         }
 
-        public FileLogger(Func<string> filenameFactory, uint bufferLengthMs, Action<Exception, IEnumerable<string>> onError)
+        public FileLogger(Func<string> filenameFactory, uint bufferLengthMs, Action<Exception, IEnumerable<string>>? onError)
         {
             p_onErrorHandler = onError;
             p_filename = filenameFactory ?? throw new ArgumentException($"'{nameof(filenameFactory)}' cannot be null.", nameof(filenameFactory));
@@ -50,7 +51,7 @@ namespace JustLogger
             set => p_timer.Interval = value;
         }
 
-        public void Info(string text, string name = null)
+        public void Info(string text, string? name = null)
         {
             if (text is null)
                 throw new ArgumentNullException(paramName: nameof(text));
@@ -60,7 +61,7 @@ namespace JustLogger
             p_buffer.Enqueue(new LogEntry(LogEntryType.INFO, text, DateTime.UtcNow, name));
         }
 
-        public void Error(string text, string name = null)
+        public void Error(string text, string? name = null)
         {
             if (text is null)
                 throw new ArgumentNullException(paramName: nameof(text));
@@ -70,7 +71,7 @@ namespace JustLogger
             p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, text, DateTime.UtcNow, name));
         }
 
-        public void Error(string text, Exception _ex, string name = null)
+        public void Error(string text, Exception _ex, string? name = null)
         {
             if (text is null)
                 throw new ArgumentNullException(paramName: nameof(text));
@@ -82,7 +83,7 @@ namespace JustLogger
             p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, $"{text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
         }
 
-        public void Warn(string text, string name = null)
+        public void Warn(string text, string? name = null)
         {
             if (text is null)
                 throw new ArgumentNullException(paramName: nameof(text));

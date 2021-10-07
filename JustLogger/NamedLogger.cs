@@ -1,4 +1,5 @@
-﻿using JustLogger.Interfaces;
+﻿#nullable enable
+using JustLogger.Interfaces;
 using JustLogger.Toolkit;
 using System;
 
@@ -16,22 +17,22 @@ namespace JustLogger
             p_name = name;
         }
 
-        public void Info(string text, string overrideName = null)
+        public void Info(string text, string? overrideName = null)
         {
             p_logger.Info(text, overrideName ?? p_name);
         }
 
-        public void Warn(string text, string overrideName = null)
+        public void Warn(string text, string? overrideName = null)
         {
             p_logger.Warn(text, overrideName ?? p_name);
         }
 
-        public void Error(string text, string overrideName = null)
+        public void Error(string text, string? overrideName = null)
         {
             p_logger.Error(text, overrideName ?? p_name);
         }
 
-        public void Error(string text, Exception _ex, string overrideName = null)
+        public void Error(string text, Exception _ex, string? overrideName = null)
         {
             p_logger.Error(text, _ex, overrideName ?? p_name);
         }

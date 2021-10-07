@@ -1,4 +1,5 @@
-﻿using JustLogger.Interfaces;
+﻿#nullable enable
+using JustLogger.Interfaces;
 using JustLogger.Toolkit;
 using System;
 using System.Collections.Concurrent;
@@ -25,21 +26,21 @@ namespace JustLogger
             }
         }
 
-        public void Info(string text, string name = null)
+        public void Info(string text, string? name = null)
         {
             if (text is null) throw new ArgumentNullException(paramName: nameof(text));
             p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, prevValue) => ++prevValue);
             WriteInConsole(new LogEntry(LogEntryType.INFO, text, DateTime.UtcNow, name));
         }
 
-        public void Error(string text, string name = null)
+        public void Error(string text, string? name = null)
         {
             if (text is null) throw new ArgumentNullException(paramName: nameof(text));
             p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
             WriteInConsole(new LogEntry(LogEntryType.ERROR, text, DateTime.UtcNow, name));
         }
 
-        public void Error(string text, Exception _ex, string name = null)
+        public void Error(string text, Exception _ex, string? name = null)
         {
             if (text is null) throw new ArgumentNullException(paramName: nameof(text));
             if (_ex is null)
@@ -49,7 +50,7 @@ namespace JustLogger
             WriteInConsole(new LogEntry(LogEntryType.ERROR, $"{text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
         }
 
-        public void Warn(string text, string name = null)
+        public void Warn(string text, string? name = null)
         {
             if (text is null) throw new ArgumentNullException(paramName: nameof(text));
             p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, prevValue) => ++prevValue);

@@ -1,4 +1,5 @@
-﻿using System;
+﻿#nullable enable
+using System;
 
 namespace JustLogger.Toolkit
 {
@@ -7,9 +8,9 @@ namespace JustLogger.Toolkit
         public LogEntryType Type;
         public string Text;
         public DateTime Time;
-        public string LogName;
+        public string? LogName;
 
-        public LogEntry(LogEntryType type, string text, DateTime time, string logName)
+        public LogEntry(LogEntryType type, string text, DateTime time, string? logName)
         {
             Type = type;
             Text = text;

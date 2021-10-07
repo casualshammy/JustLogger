@@ -1,4 +1,5 @@
-﻿using JustLogger.Interfaces;
+﻿#nullable enable
+using JustLogger.Interfaces;
 
 namespace JustLogger
 {
