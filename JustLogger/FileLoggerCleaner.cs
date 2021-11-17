@@ -6,7 +6,7 @@ using System.Timers;
 
 namespace JustLogger
 {
-    internal class FileLoggerCleaner : IDisposable
+    public class FileLoggerCleaner : IDisposable
     {
         private readonly Timer p_rotateTimer;
         private readonly DirectoryInfo p_directory;
@@ -29,15 +29,17 @@ namespace JustLogger
         private void RotateTimer_Elapsed(object sender, ElapsedEventArgs e)
         {
             var now = DateTime.UtcNow;
-            var directories = p_recursive ? p_directory.GetDirectories("*", SearchOption.AllDirectories) : new[] { p_directory };
-            foreach (var dir in directories)
-                foreach (var file in dir.GetFiles())
-                    if ((now - file.LastWriteTimeUtc) > p_rotateInterval && p_rotateFileNamePattern.IsMatch(file.Name))
-                        try
-                        {
-                            file.Delete();
-                        }
-                        catch { }
+            var files = p_recursive ?
+                p_directory.GetFiles("*.*", SearchOption.AllDirectories) :
+                p_directory.GetFiles("*.*", SearchOption.TopDirectoryOnly);
+
+            foreach (var file in files)
+                if ((now - file.LastWriteTimeUtc) > p_rotateInterval && p_rotateFileNamePattern.IsMatch(file.Name))
+                    try
+                    {
+                        file.Delete();
+                    }
+                    catch { }
         }
 
         protected virtual void Dispose(bool disposing)
