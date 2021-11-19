@@ -51,6 +51,8 @@ namespace JustLogger
             set => p_timer.Interval = value;
         }
 
+        public FileInfo CurrentLogFile => new(p_filename());
+
         public void Info(string text, string? name = null)
         {
             if (text is null)
