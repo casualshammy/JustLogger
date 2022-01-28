@@ -1,9 +1,10 @@
 # JustLogger
-Very simple logger I am using in my projects
-
 ![GitHub Workflow Status](https://img.shields.io/github/workflow/status/casualshammy/JustLogger/publish-nuget)
 ![Nuget](https://img.shields.io/nuget/v/JustLogger)
 ![Nuget](https://img.shields.io/nuget/dt/JustLogger)
+
+Very simple logger I am using in my projects
+
 ## Loggers
 There are 2 (3) loggers: `ConsoleLogger`, `FileLogger` and `CompositeLogger`. First and second are self-describing, the third is special logger that can be used like 'container' for multiple loggers
 ## Examples
