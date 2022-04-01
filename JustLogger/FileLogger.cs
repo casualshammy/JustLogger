@@ -15,7 +15,7 @@ namespace JustLogger
     public class FileLogger : ILoggerDisposable
     {
         private readonly ConcurrentQueue<LogEntry> p_buffer = new();
-        private readonly Func<string> p_filename;
+        private readonly Func<string?> p_filename;
         private bool p_disposedValue;
         private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
         private readonly Timer p_timer;
@@ -34,7 +34,7 @@ namespace JustLogger
             p_timer.Start();
         }
 
-        public FileLogger(Func<string> filenameFactory, uint bufferLengthMs, Action<Exception, IEnumerable<string>>? onError)
+        public FileLogger(Func<string?> filenameFactory, uint bufferLengthMs, Action<Exception, IEnumerable<string>>? onError)
         {
             p_onErrorHandler = onError;
             p_filename = filenameFactory ?? throw new ArgumentException($"'{nameof(filenameFactory)}' cannot be null.", nameof(filenameFactory));
@@ -136,23 +136,27 @@ namespace JustLogger
         {
             try
             {
-                var stringBuilder = new StringBuilder();
-                while (p_buffer.TryDequeue(out var logEntry))
-                {
-                    if (logEntry.LogName != null)
-                        stringBuilder.AppendLine($"{logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{logEntry.Type}] [{logEntry.LogName}] {logEntry.Text}");
-                    else
-                        stringBuilder.AppendLine($"{logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{logEntry.Type}] {logEntry.Text}");
-                }
-
-                if (stringBuilder.Length > 0)
+                if (p_buffer.Any())
                 {
                     var filepath = p_filename();
+                    if (filepath == null)
+                        return;
+
+                    var stringBuilder = new StringBuilder();
+
+                    while (p_buffer.TryDequeue(out var logEntry))
+                    {
+                        if (logEntry.LogName != null)
+                            stringBuilder.AppendLine($"{logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{logEntry.Type}] [{logEntry.LogName}] {logEntry.Text}");
+                        else
+                            stringBuilder.AppendLine($"{logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{logEntry.Type}] {logEntry.Text}");
+                    }
+
                     p_filesWrote.Add(filepath);
                     File.AppendAllText(filepath, stringBuilder.ToString(), Encoding.UTF8);
-                }
 
-                stringBuilder.Clear();
+                    stringBuilder.Clear();
+                }
             }
             catch (Exception ex)
             {

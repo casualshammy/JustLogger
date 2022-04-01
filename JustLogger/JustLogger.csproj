@@ -3,12 +3,16 @@
   <PropertyGroup>
     <TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
     <PackageId>JustLogger</PackageId>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
     <Description>Simple file and console loggers</Description>
     <Version>$(Version)</Version>
     <Authors>Axio</Authors>
-    <Company>Axio.Lab</Company>
+    <Company>$(Authors)</Company>
     <LangVersion>latest</LangVersion>
+    <Copyright>$(Authors)</Copyright>
+    <PackageProjectUrl>https://github.com/casualshammy/JustLogger</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/casualshammy/JustLogger</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
   </PropertyGroup>
 
   <ItemGroup>
