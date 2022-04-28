@@ -12,8 +12,21 @@ namespace JustLogger
         private bool p_disposedValue;
         private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
         private readonly static object p_consoleLock = new();
+        private readonly Func<LogEntry, string> p_logEntryFormat;
 
-        public ConsoleLogger() { }
+        public ConsoleLogger(Func<LogEntry, string>? _logEntryFormat = null)
+        {
+            if (_logEntryFormat == null)
+                p_logEntryFormat = _logEntry =>
+                {
+                    if (_logEntry.LogName != null)
+                        return $"{_logEntry.GetTypePrefix()} {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{_logEntry.LogName}] {_logEntry.Text}";
+                    else
+                        return $"{_logEntry.GetTypePrefix()} {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} {_logEntry.Text}";
+                };
+            else
+                p_logEntryFormat = _logEntryFormat;
+        }
 
         private static void ConsoleWriteColourText(string text, ConsoleColor colour)
         {
@@ -100,11 +113,8 @@ namespace JustLogger
 
         private void WriteInConsole(LogEntry _entry)
         {
-            string text;
-            if (_entry.LogName != null)
-                text = $"{_entry.Time:dd.MM.yyyy HH:mm:ss.fff} [{_entry.Type}] [{_entry.LogName}] {_entry.Text}\n";
-            else
-                text = $"{_entry.Time:dd.MM.yyyy HH:mm:ss.fff} [{_entry.Type}] {_entry.Text}\n";
+            string text = p_logEntryFormat(_entry) + "\n";
+
             if (_entry.Type == LogEntryType.INFO)
                 ConsoleWriteColourText(text, ConsoleColor.White);
             else if (_entry.Type == LogEntryType.WARN)

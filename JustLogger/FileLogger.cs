@@ -20,25 +20,25 @@ namespace JustLogger
         private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
         private readonly Timer p_timer;
         private readonly Action<Exception, IEnumerable<string>>? p_onErrorHandler;
+        private readonly Func<LogEntry, string> p_logEntryFormat;
         private readonly HashSet<string> p_filesWrote = new();
 
-        public FileLogger(string filename, uint bufferLengthMs, Action<Exception, IEnumerable<string>>? onError)
+        public FileLogger(Func<string?> _filenameFactory, uint _bufferLengthMs, Func<LogEntry, string>? _logEntryFormat = null, Action<Exception, IEnumerable<string>>? _onError = null)
         {
-            if (string.IsNullOrWhiteSpace(filename))
-                throw new ArgumentException($"'{nameof(filename)}' cannot be null or whitespace.", nameof(filename));
+            p_onErrorHandler = _onError;
+            p_filename = _filenameFactory ?? throw new ArgumentException($"'{nameof(_filenameFactory)}' cannot be null.", nameof(_filenameFactory));
+            if (_logEntryFormat == null)
+                p_logEntryFormat = _logEntry =>
+                {
+                    if (_logEntry.LogName != null)
+                        return $"{_logEntry.GetTypePrefix()} {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{_logEntry.LogName}] {_logEntry.Text}";
+                    else
+                        return $"{_logEntry.GetTypePrefix()} {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} {_logEntry.Text}";
+                };
+            else
+                p_logEntryFormat = _logEntryFormat;
 
-            p_onErrorHandler = onError;
-            p_filename = () => filename;
-            p_timer = new Timer(bufferLengthMs);
-            p_timer.Elapsed += Timer_Elapsed;
-            p_timer.Start();
-        }
-
-        public FileLogger(Func<string?> filenameFactory, uint bufferLengthMs, Action<Exception, IEnumerable<string>>? onError)
-        {
-            p_onErrorHandler = onError;
-            p_filename = filenameFactory ?? throw new ArgumentException($"'{nameof(filenameFactory)}' cannot be null.", nameof(filenameFactory));
-            p_timer = new Timer(bufferLengthMs);
+            p_timer = new Timer(_bufferLengthMs);
             p_timer.Elapsed += Timer_Elapsed;
             p_timer.Start();
         }
@@ -51,7 +51,17 @@ namespace JustLogger
             set => p_timer.Interval = value;
         }
 
-        public FileInfo CurrentLogFile => new(p_filename());
+        public FileInfo? CurrentLogFile
+        {
+            get
+            {
+                var filePath = p_filename();
+                if (filePath == null)
+                    return null;
+
+                return new(filePath);
+            }
+        }
 
         public void Info(string text, string? name = null)
         {
@@ -145,12 +155,7 @@ namespace JustLogger
                     var stringBuilder = new StringBuilder();
 
                     while (p_buffer.TryDequeue(out var logEntry))
-                    {
-                        if (logEntry.LogName != null)
-                            stringBuilder.AppendLine($"{logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{logEntry.Type}] [{logEntry.LogName}] {logEntry.Text}");
-                        else
-                            stringBuilder.AppendLine($"{logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{logEntry.Type}] {logEntry.Text}");
-                    }
+                        stringBuilder.AppendLine(p_logEntryFormat(logEntry));
 
                     p_filesWrote.Add(filepath);
                     File.AppendAllText(filepath, stringBuilder.ToString(), Encoding.UTF8);
@@ -164,10 +169,7 @@ namespace JustLogger
             }
         }
 
-        private void Timer_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            Flush();
-        }
+        private void Timer_Elapsed(object _, ElapsedEventArgs __) => Flush();
 
     }
 }
