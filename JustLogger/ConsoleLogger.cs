@@ -20,9 +20,9 @@ namespace JustLogger
                 p_logEntryFormat = _logEntry =>
                 {
                     if (_logEntry.LogName != null)
-                        return $"{_logEntry.GetTypePrefix()} {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{_logEntry.LogName}] {_logEntry.Text}";
+                        return $"| {_logEntry.GetTypePrefix()} | {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} [{_logEntry.LogName}] {_logEntry.Text}";
                     else
-                        return $"{_logEntry.GetTypePrefix()} {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} {_logEntry.Text}";
+                        return $"| {_logEntry.GetTypePrefix()} | {_logEntry.Time:dd.MM.yyyy HH:mm:ss.fff} {_logEntry.Text}";
                 };
             else
                 p_logEntryFormat = _logEntryFormat;
