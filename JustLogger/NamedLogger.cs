@@ -18,7 +18,7 @@ public class NamedLogger : ILogger
     if (logger is not NamedLogger namedLogger)
       p_name = name;
     else
-      p_name = $"{namedLogger.p_name}//{name}";
+      p_name = $"{namedLogger.p_name} | {name}";
   }
 
   public void Info(string text, string? overrideName = null)
