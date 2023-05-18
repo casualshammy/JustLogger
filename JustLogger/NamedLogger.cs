@@ -1,6 +1,6 @@
-﻿#nullable enable
-using JustLogger.Interfaces;
+﻿using JustLogger.Interfaces;
 using JustLogger.Toolkit;
+using Newtonsoft.Json.Linq;
 using System;
 
 namespace JustLogger;
@@ -10,45 +10,50 @@ public class NamedLogger : ILogger
   private readonly ILogger p_logger;
   private readonly string p_name;
 
-  public NamedLogger(ILogger logger, string name)
+  public NamedLogger(ILogger _logger, string _name)
   {
-    if (string.IsNullOrEmpty(name)) throw new ArgumentException($"'{nameof(name)}' cannot be null or empty.", nameof(name));
-    p_logger = logger ?? throw new ArgumentNullException(paramName: nameof(logger));
+    if (string.IsNullOrEmpty(_name)) throw new ArgumentException($"'{nameof(_name)}' cannot be null or empty.", nameof(_name));
+    p_logger = _logger ?? throw new ArgumentNullException(paramName: nameof(_logger));
 
-    if (logger is not NamedLogger namedLogger)
-      p_name = name;
+    if (_logger is not NamedLogger namedLogger)
+      p_name = _name;
     else
-      p_name = $"{namedLogger.p_name} | {name}";
+      p_name = $"{namedLogger.p_name} | {_name}";
   }
 
-  public void Info(string text, string? overrideName = null)
+  public void Info(string _text, string? _overrideName = null)
   {
-    p_logger.Info(text, overrideName ?? p_name);
+    p_logger.Info(_text, _overrideName ?? p_name);
   }
 
-  public void Warn(string text, string? overrideName = null)
+  public void InfoJson(string _text, JToken _object, string? _name = null)
   {
-    p_logger.Warn(text, overrideName ?? p_name);
+    p_logger.InfoJson(_text, _object, _name ?? p_name);
   }
 
-  public void Error(string text, string? overrideName = null)
+  public void Warn(string _text, string? _overrideName = null)
   {
-    p_logger.Error(text, overrideName ?? p_name);
+    p_logger.Warn(_text, _overrideName ?? p_name);
   }
 
-  public void Error(string text, Exception _ex, string? overrideName = null)
+  public void Error(string _text, string? _overrideName = null)
   {
-    p_logger.Error(text, _ex, overrideName ?? p_name);
+    p_logger.Error(_text, _overrideName ?? p_name);
   }
 
-  public void NewEvent(LogEntryType type, string text)
+  public void Error(string _text, Exception _ex, string? _overrideName = null)
   {
-    if (type == LogEntryType.INFO)
-      Info(text);
-    else if (type == LogEntryType.WARN)
-      Warn(text);
-    else if (type == LogEntryType.ERROR)
-      Error(text);
+    p_logger.Error(_text, _ex, _overrideName ?? p_name);
+  }
+
+  public void NewEvent(LogEntryType _type, string _text)
+  {
+    if (_type == LogEntryType.INFO)
+      Info(_text);
+    else if (_type == LogEntryType.WARN)
+      Warn(_text);
+    else if (_type == LogEntryType.ERROR)
+      Error(_text);
   }
 
   public long GetEntriesCount(LogEntryType type)

@@ -13,9 +13,15 @@ public class FileLoggerCleaner : IDisposable
   private readonly bool p_recursive;
   private readonly Regex p_rotateFileNamePattern;
   private readonly TimeSpan p_rotateInterval;
+  private readonly Action<FileInfo>? p_onFileDeleted;
   private bool p_disposedValue;
 
-  private FileLoggerCleaner(DirectoryInfo _directory, bool _recursive, Regex _rotateFileNamePattern, TimeSpan _rotateInterval)
+  private FileLoggerCleaner(
+    DirectoryInfo _directory, 
+    bool _recursive, 
+    Regex _rotateFileNamePattern, 
+    TimeSpan _rotateInterval,
+    Action<FileInfo>? _onFileDeleted = null)
   {
     p_rotateTimer = new Timer(10 * 60 * 1000);
     p_rotateTimer.Elapsed += RotateTimer_Elapsed;
@@ -24,13 +30,14 @@ public class FileLoggerCleaner : IDisposable
     p_recursive = _recursive;
     p_rotateFileNamePattern = _rotateFileNamePattern;
     p_rotateInterval = _rotateInterval;
+    p_onFileDeleted = _onFileDeleted;
   }
 
   /// <summary>
   /// Creates log watcher. Logs in <paramref name="_directory"/> older than <paramref name="_rotateInterval"/> will be purged every 10 minutes
   /// </summary>
-  public static FileLoggerCleaner Create(DirectoryInfo _directory, bool _recursive, Regex _logFileNamePattern, TimeSpan _rotateInterval)
-      => new(_directory, _recursive, _logFileNamePattern, _rotateInterval);
+  public static FileLoggerCleaner Create(DirectoryInfo _directory, bool _recursive, Regex _logFileNamePattern, TimeSpan _rotateInterval, Action<FileInfo>? _onFileDeleted = null)
+      => new(_directory, _recursive, _logFileNamePattern, _rotateInterval, _onFileDeleted);
 
   private void RotateTimer_Elapsed(object _sender, ElapsedEventArgs _e)
   {
@@ -44,6 +51,8 @@ public class FileLoggerCleaner : IDisposable
         try
         {
           file.Delete();
+          file.Refresh();
+          p_onFileDeleted?.Invoke(file);
         }
         catch { }
   }

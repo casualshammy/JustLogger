@@ -1,27 +1,27 @@
-﻿#nullable enable
-using JustLogger.Toolkit;
+﻿using JustLogger.Toolkit;
+using Newtonsoft.Json.Linq;
 using System;
 
-namespace JustLogger.Interfaces
+namespace JustLogger.Interfaces;
+
+public interface ILogger
 {
-    public interface ILogger
-    {
-        void Info(string text, string? name = null);
+  void Info(string _text, string? _name = null);
 
-        void Error(string text, string? name = null);
+  void InfoJson(string _text, JToken _object, string? _name = null);
 
-        void Error(string text, Exception _ex, string? name = null);
+  void Error(string _text, string? name = null);
 
-        void Warn(string text, string? name = null);
+  void Error(string _text, Exception _ex, string? _name = null);
 
-        void NewEvent(LogEntryType type, string text);
+  void Warn(string _text, string? _name = null);
 
-        long GetEntriesCount(LogEntryType type);
+  void NewEvent(LogEntryType type, string _text);
 
-        NamedLogger this[string name] { get; }
+  long GetEntriesCount(LogEntryType type);
 
-        void Flush();
+  NamedLogger this[string name] { get; }
 
-    }
+  void Flush();
 
 }
