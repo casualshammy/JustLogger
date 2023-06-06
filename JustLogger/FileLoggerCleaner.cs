@@ -1,71 +1,100 @@
-﻿#nullable enable
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.IO;
+using System.Reactive;
+using System.Reactive.Concurrency;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
-using System.Timers;
 
 namespace JustLogger;
 
 public class FileLoggerCleaner : IDisposable
 {
-  private readonly Timer p_rotateTimer;
-  private readonly DirectoryInfo p_directory;
-  private readonly bool p_recursive;
-  private readonly Regex p_rotateFileNamePattern;
-  private readonly TimeSpan p_rotateInterval;
-  private readonly Action<FileInfo>? p_onFileDeleted;
+  private readonly ConcurrentStack<IDisposable> p_disposableStack = new();
+  private readonly Subject<Unit> p_purgeReqFlow = new();
   private bool p_disposedValue;
 
   private FileLoggerCleaner(
-    DirectoryInfo _directory, 
-    bool _recursive, 
-    Regex _rotateFileNamePattern, 
-    TimeSpan _rotateInterval,
+    DirectoryInfo _directory,
+    bool _recursive,
+    Regex _rotateFileNamePattern,
+    TimeSpan _logTtl,
+    TimeSpan? _pollingInterval = null,
     Action<FileInfo>? _onFileDeleted = null)
   {
-    p_rotateTimer = new Timer(10 * 60 * 1000);
-    p_rotateTimer.Elapsed += RotateTimer_Elapsed;
-    p_rotateTimer.Start();
-    p_directory = _directory;
-    p_recursive = _recursive;
-    p_rotateFileNamePattern = _rotateFileNamePattern;
-    p_rotateInterval = _rotateInterval;
-    p_onFileDeleted = _onFileDeleted;
+    var scheduler = new EventLoopScheduler();
+    p_disposableStack.Push(scheduler);
+
+    IObservable<Unit> observable;
+    if (_pollingInterval != null)
+    {
+      observable = Observable
+        .Interval(_pollingInterval.Value, scheduler)
+        .Select(_ => Unit.Default)
+        .StartWith(Unit.Default)
+        .Merge(p_purgeReqFlow);
+    }
+    else
+    {
+      observable = Observable
+        .Return(Unit.Default)
+        .Concat(p_purgeReqFlow);
+    }
+
+    var subs = observable
+      .ObserveOn(scheduler)
+      .Subscribe(_ =>
+      {
+        var now = DateTimeOffset.UtcNow;
+        var files = _recursive ?
+          _directory.GetFiles("*", SearchOption.AllDirectories) :
+          _directory.GetFiles("*", SearchOption.TopDirectoryOnly);
+
+        foreach (var file in files)
+          if ((now - file.LastWriteTimeUtc) > _logTtl && _rotateFileNamePattern.IsMatch(file.Name))
+          {
+            try
+            {
+              file.Delete();
+
+              if (_onFileDeleted != null)
+              {
+                file.Refresh();
+                _onFileDeleted.Invoke(file);
+              }
+            }
+            catch { }
+          }
+      });
+
+    p_disposableStack.Push(subs);
   }
 
   /// <summary>
-  /// Creates log watcher. Logs in <paramref name="_directory"/> older than <paramref name="_rotateInterval"/> will be purged every 10 minutes
+  /// Creates log watcher. Logs in <paramref name="_directory"/> older than <paramref name="_logTtl"/> will be purged every <paramref name="_pollingInterval"/>
+  /// <para></para>
+  /// If <paramref name="_pollingInterval"/> is null, no periodic purges will be performed. In that case use <see cref="Purge"/> method
   /// </summary>
-  public static FileLoggerCleaner Create(DirectoryInfo _directory, bool _recursive, Regex _logFileNamePattern, TimeSpan _rotateInterval, Action<FileInfo>? _onFileDeleted = null)
-      => new(_directory, _recursive, _logFileNamePattern, _rotateInterval, _onFileDeleted);
+  public static FileLoggerCleaner Create(
+    DirectoryInfo _directory,
+    bool _recursive,
+    Regex _logFileNamePattern,
+    TimeSpan _logTtl,
+    TimeSpan? _pollingInterval = null,
+    Action<FileInfo>? _onFileDeleted = null)
+    => new(_directory, _recursive, _logFileNamePattern, _logTtl, _pollingInterval, _onFileDeleted);
 
-  private void RotateTimer_Elapsed(object _sender, ElapsedEventArgs _e)
-  {
-    var now = DateTime.UtcNow;
-    var files = p_recursive ?
-        p_directory.GetFiles("*.*", SearchOption.AllDirectories) :
-        p_directory.GetFiles("*.*", SearchOption.TopDirectoryOnly);
-
-    foreach (var file in files)
-      if ((now - file.LastWriteTimeUtc) > p_rotateInterval && p_rotateFileNamePattern.IsMatch(file.Name))
-        try
-        {
-          file.Delete();
-          file.Refresh();
-          p_onFileDeleted?.Invoke(file);
-        }
-        catch { }
-  }
+  public void Purge() => p_purgeReqFlow.OnNext(Unit.Default);
 
   protected virtual void Dispose(bool _disposing)
   {
     if (!p_disposedValue)
     {
       if (_disposing)
-      {
-        p_rotateTimer.Stop();
-        p_rotateTimer.Dispose();
-      }
+        while (p_disposableStack.TryPop(out var disposable))
+          disposable.Dispose();
+
       p_disposedValue = true;
     }
   }
