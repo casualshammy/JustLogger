@@ -1,20 +1,42 @@
 ﻿using JustLogger.Interfaces;
 using JustLogger.Toolkit;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 
 namespace JustLogger;
 
-public class CompositeLogger : ILoggerDisposable
+public class CompositeLogger(params ILogger[] _loggers) : ILoggerDisposable
 {
-  private readonly ILogger[] p_loggers;
+  private readonly ILogger[] p_loggers = _loggers;
   private bool p_disposedValue;
   private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
 
-  public CompositeLogger(params ILogger[] _loggers)
+  public void Info(string _text, string? _name = null)
   {
-    p_loggers = _loggers;
+    p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
+    foreach (ILogger logger in p_loggers)
+      logger.Info(_text, _name);
+  }
+
+  public void InfoJson<T>(string _text, T _object, string? _name = null)
+  {
+    p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
+    foreach (var logger in p_loggers)
+      logger.InfoJson(_text, _object, _name);
+  }
+
+  public void Warn(string _text, string? _name = null)
+  {
+    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
+    foreach (ILogger logger in p_loggers)
+      logger.Warn(_text, _name);
+  }
+
+  public void WarnJson<T>(string _text, T _object, string? _scope = null)
+  {
+    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
+    foreach (var logger in p_loggers)
+      logger.WarnJson(_text, _object, _scope);
   }
 
   public void Error(string _text, string? _name = null)
@@ -31,31 +53,11 @@ public class CompositeLogger : ILoggerDisposable
       logger.Error(_text, _ex, _name);
   }
 
-  public void Info(string _text, string? _name = null)
+  public void ErrorJson<T>(string _text, T _object, string? _scope = null)
   {
-    p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
+    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
     foreach (ILogger logger in p_loggers)
-      logger.Info(_text, _name);
-  }
-
-  public void InfoJson(string _text, JToken _object, string? _name = null)
-  {
-    p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
-    foreach (var logger in p_loggers)
-      logger.InfoJson(_text, _object, _name);
-  }
-
-  public void Warn(string _text, string? _name = null)
-  {
-    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
-    foreach (ILogger logger in p_loggers)
-      logger.Warn(_text, _name);
-  }
-
-  public void NewEvent(LogEntryType _type, string _text)
-  {
-    foreach (ILogger logger in p_loggers)
-      logger.NewEvent(_type, _text);
+      logger.ErrorJson(_text, _object, _scope);
   }
 
   public long GetEntriesCount(LogEntryType _type)
@@ -64,7 +66,7 @@ public class CompositeLogger : ILoggerDisposable
     return value;
   }
 
-  public NamedLogger this[string _name] => new(this, _name);
+  public ILogger this[string _name] => new NamedLogger(this, _name);
 
   public void Flush()
   {

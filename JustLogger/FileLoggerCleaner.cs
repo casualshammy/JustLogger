@@ -47,9 +47,17 @@ public class FileLoggerCleaner : IDisposable
       .Subscribe(_ =>
       {
         var now = DateTimeOffset.UtcNow;
-        var files = _recursive ?
-          _directory.GetFiles("*", SearchOption.AllDirectories) :
-          _directory.GetFiles("*", SearchOption.TopDirectoryOnly);
+        FileInfo[]? files = null;
+        try
+        {
+          files = _recursive ?
+            _directory.GetFiles("*", SearchOption.AllDirectories) :
+            _directory.GetFiles("*", SearchOption.TopDirectoryOnly);
+        }
+        catch { }
+
+        if (files == null)
+          return;
 
         foreach (var file in files)
           if ((now - file.LastWriteTimeUtc) > _logTtl && _rotateFileNamePattern.IsMatch(file.Name))

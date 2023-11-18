@@ -1,18 +1,19 @@
 ﻿using JustLogger.Interfaces;
 using JustLogger.Toolkit;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace JustLogger;
 
 public class ConsoleLogger : ILoggerDisposable
 {
-  private bool p_disposedValue;
   private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
   private readonly static object p_consoleLock = new();
   private readonly Func<LogEntry, string> p_logEntryFormat;
+  private readonly JsonSerializerOptions p_jsonSerializerOptions;
+  private bool p_disposedValue;
 
   public ConsoleLogger(Func<LogEntry, string>? _logEntryFormat = null)
   {
@@ -26,49 +27,78 @@ public class ConsoleLogger : ILoggerDisposable
       };
     else
       p_logEntryFormat = _logEntryFormat;
+
+    p_jsonSerializerOptions = new JsonSerializerOptions
+    {
+      WriteIndented = true,
+    };
   }
 
-  private static void ConsoleWriteColourText(string text, ConsoleColor colour)
+  private static void ConsoleWriteColourText(string _text, ConsoleColor _colour)
   {
     lock (p_consoleLock)
     {
       ConsoleColor oldColour = Console.ForegroundColor;
-      Console.ForegroundColor = colour;
-      Console.Write(text);
+      Console.ForegroundColor = _colour;
+      Console.Write(_text);
       Console.ForegroundColor = oldColour;
     }
   }
 
-  public void Info(string text, string? name = null)
+  public void Info(string _text, string? _scope = null)
   {
-    if (text is null)
-      throw new ArgumentNullException(paramName: nameof(text));
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
 
     p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, prevValue) => ++prevValue);
-    WriteInConsole(new LogEntry(LogEntryType.INFO, text, DateTime.UtcNow, name));
+    WriteInConsole(new LogEntry(LogEntryType.INFO, _text, DateTime.UtcNow, _scope));
   }
 
-  public void InfoJson(string _text, JToken _object, string? _name = null)
+  public void InfoJson<T>(string _text, T _object, string? _scope = null) where T : notnull
   {
     p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
 
     var entry = new LogEntry(
       LogEntryType.INFO,
-      $"{_text}{Environment.NewLine}{_object.ToString(Newtonsoft.Json.Formatting.Indented)}",
-      DateTime.UtcNow,
-      _name);
+      $"{_text}{Environment.NewLine}{JsonSerializer.Serialize(_object, p_jsonSerializerOptions)}",
+      DateTimeOffset.UtcNow,
+      _scope);
 
     WriteInConsole(entry);
   }
 
-  public void Error(string text, string? name = null)
+  public void Warn(string _text, string? _scope = null)
   {
-    if (text is null) throw new ArgumentNullException(paramName: nameof(text));
-    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
-    WriteInConsole(new LogEntry(LogEntryType.ERROR, text, DateTime.UtcNow, name));
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
+
+    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
+    WriteInConsole(new LogEntry(LogEntryType.WARN, _text, DateTime.UtcNow, _scope));
   }
 
-  public void Error(string _text, Exception _ex, string? _name = null)
+  public void WarnJson<T>(string _text, T _object, string? _scope = null) where T : notnull
+  {
+    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
+
+    var entry = new LogEntry(
+      LogEntryType.WARN,
+      $"{_text}{Environment.NewLine}{JsonSerializer.Serialize(_object, p_jsonSerializerOptions)}",
+      DateTimeOffset.UtcNow,
+      _scope);
+
+    WriteInConsole(entry);
+  }
+
+  public void Error(string _text, string? _scope = null)
+  {
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
+
+    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
+    WriteInConsole(new LogEntry(LogEntryType.ERROR, _text, DateTime.UtcNow, _scope));
+  }
+
+  public void Error(string _text, Exception _ex, string? _scope = null)
   {
     if (_text is null)
       throw new ArgumentNullException(paramName: nameof(_text));
@@ -76,14 +106,20 @@ public class ConsoleLogger : ILoggerDisposable
       throw new ArgumentNullException(paramName: nameof(_ex));
 
     p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
-    WriteInConsole(new LogEntry(LogEntryType.ERROR, $"{_text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, _name));
+    WriteInConsole(new LogEntry(LogEntryType.ERROR, $"{_text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, _scope));
   }
 
-  public void Warn(string text, string? name = null)
+  public void ErrorJson<T>(string _text, T _object, string? _scope = null) where T : notnull
   {
-    if (text is null) throw new ArgumentNullException(paramName: nameof(text));
-    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, prevValue) => ++prevValue);
-    WriteInConsole(new LogEntry(LogEntryType.WARN, text, DateTime.UtcNow, name));
+    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, _prevValue) => ++_prevValue);
+
+    var entry = new LogEntry(
+      LogEntryType.ERROR,
+      $"{_text}{Environment.NewLine}{JsonSerializer.Serialize(_object, p_jsonSerializerOptions)}",
+      DateTimeOffset.UtcNow,
+      _scope);
+
+    WriteInConsole(entry);
   }
 
   public void NewEvent(LogEntryType type, string text)
@@ -102,7 +138,7 @@ public class ConsoleLogger : ILoggerDisposable
     return value;
   }
 
-  public NamedLogger this[string name] => new(this, name);
+  public ILogger this[string _scope] => new NamedLogger(this, _scope);
 
   protected virtual void Dispose(bool disposing)
   {

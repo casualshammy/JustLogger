@@ -1,32 +1,31 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-	<PropertyGroup>
-		<TargetFrameworks>netstandard2.1;net472</TargetFrameworks>
-		<PackageId>JustLogger</PackageId>
-		<PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
-		<Description>Simple file and console loggers</Description>
-		<Version>$(Version)</Version>
-		<Authors>Axio</Authors>
-		<Company>$(Authors)</Company>
-		<LangVersion>latest</LangVersion>
-		<Copyright>$(Authors)</Copyright>
-		<PackageProjectUrl>https://github.com/casualshammy/JustLogger</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/casualshammy/JustLogger</RepositoryUrl>
-		<RepositoryType>git</RepositoryType>
-		<Nullable>enable</Nullable>
-	</PropertyGroup>
+		<PropertyGroup>
+				<TargetFramework>net6.0</TargetFramework>
+				<PackageId>JustLogger</PackageId>
+				<PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
+				<Description>Simple file and console loggers</Description>
+				<Version>$(Version)</Version>
+				<Authors>Axio</Authors>
+				<Company>$(Authors)</Company>
+				<LangVersion>latest</LangVersion>
+				<Copyright>$(Authors)</Copyright>
+				<PackageProjectUrl>https://github.com/casualshammy/JustLogger</PackageProjectUrl>
+				<RepositoryUrl>https://github.com/casualshammy/JustLogger</RepositoryUrl>
+				<RepositoryType>git</RepositoryType>
+				<Nullable>enable</Nullable>
+		</PropertyGroup>
 
-	<ItemGroup>
-		<None Remove="_nuget-push.bat" />
-	</ItemGroup>
+		<ItemGroup>
+				<None Remove="_nuget-push.bat" />
+		</ItemGroup>
 
-	<ItemGroup>
-		<Folder Include="Toolkit\" />
-	</ItemGroup>
+		<ItemGroup>
+				<Folder Include="Toolkit\" />
+		</ItemGroup>
 
-	<ItemGroup>
-		<PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-		<PackageReference Include="System.Reactive" Version="6.0.0" />
-	</ItemGroup>
+		<ItemGroup>
+				<PackageReference Include="System.Reactive" Version="6.0.0" />
+		</ItemGroup>
 
 </Project>

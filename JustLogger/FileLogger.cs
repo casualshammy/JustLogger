@@ -1,7 +1,5 @@
-﻿#nullable enable
-using JustLogger.Interfaces;
+﻿using JustLogger.Interfaces;
 using JustLogger.Toolkit;
-using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,9 +7,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Timers;
-using static System.Net.Mime.MediaTypeNames;
-using System.Xml.Linq;
 
 namespace JustLogger;
 
@@ -19,12 +16,13 @@ public class FileLogger : ILoggerDisposable
 {
   private readonly ConcurrentQueue<LogEntry> p_buffer = new();
   private readonly Func<string?> p_filename;
-  private bool p_disposedValue;
   private readonly ConcurrentDictionary<LogEntryType, long> p_stats = new();
   private readonly Timer p_timer;
   private readonly Action<Exception, IEnumerable<string>>? p_onErrorHandler;
   private readonly Func<LogEntry, string> p_logEntryFormat;
   private readonly HashSet<string> p_filesWrote = new();
+  private readonly JsonSerializerOptions p_jsonSerializerOptions;
+  private bool p_disposedValue;
 
   public FileLogger(Func<string?> _filenameFactory, uint _bufferLengthMs, Func<LogEntry, string>? _logEntryFormat = null, Action<Exception, IEnumerable<string>>? _onError = null)
   {
@@ -44,6 +42,11 @@ public class FileLogger : ILoggerDisposable
     p_timer = new Timer(_bufferLengthMs);
     p_timer.Elapsed += Timer_Elapsed;
     p_timer.Start();
+
+    p_jsonSerializerOptions = new JsonSerializerOptions
+    {
+      WriteIndented = true,
+    };
   }
 
   public IReadOnlyCollection<string> LogFilesWrote => p_filesWrote;
@@ -66,84 +69,100 @@ public class FileLogger : ILoggerDisposable
     }
   }
 
-  public void Info(string text, string? name = null)
+  public void Info(string _text, string? _scope = null)
   {
-    if (text is null)
-      throw new ArgumentNullException(paramName: nameof(text));
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
 
-    p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, prevValue) => ++prevValue);
+    p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
 
-    p_buffer.Enqueue(new LogEntry(LogEntryType.INFO, text, DateTime.UtcNow, name));
+    p_buffer.Enqueue(new LogEntry(LogEntryType.INFO, _text, DateTime.UtcNow, _scope));
   }
 
-  public void InfoJson(string _text, JToken _object, string? _name = null)
+  public void InfoJson<T>(string _text, T _object, string? _scope = null) where T : notnull
   {
     p_stats.AddOrUpdate(LogEntryType.INFO, 1, (_, _prevValue) => ++_prevValue);
 
     var entry = new LogEntry(
       LogEntryType.INFO,
-      $"{_text}{Environment.NewLine}{_object.ToString(Newtonsoft.Json.Formatting.Indented)}",
-      DateTime.UtcNow,
-      _name);
+      $"{_text}{Environment.NewLine}{JsonSerializer.Serialize(_object, p_jsonSerializerOptions)}",
+      DateTimeOffset.UtcNow,
+      _scope);
 
     p_buffer.Enqueue(entry);
   }
 
-  public void Error(string text, string? name = null)
+  public void Warn(string _text, string? _scope = null)
   {
-    if (text is null)
-      throw new ArgumentNullException(paramName: nameof(text));
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
 
-    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
+    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
 
-    p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, text, DateTime.UtcNow, name));
+    p_buffer.Enqueue(new LogEntry(LogEntryType.WARN, _text, DateTimeOffset.UtcNow, _scope));
   }
 
-  public void Error(string text, Exception _ex, string? name = null)
+  public void WarnJson<T>(string _text, T _object, string? _scope = null) where T : notnull
   {
-    if (text is null)
-      throw new ArgumentNullException(paramName: nameof(text));
+    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, _prevValue) => ++_prevValue);
+
+    var entry = new LogEntry(
+      LogEntryType.WARN,
+      $"{_text}{Environment.NewLine}{JsonSerializer.Serialize(_object, p_jsonSerializerOptions)}",
+      DateTimeOffset.UtcNow,
+      _scope);
+
+    p_buffer.Enqueue(entry);
+  }
+
+  public void Error(string _text, string? _scope = null)
+  {
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
+
+    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, _prevValue) => ++_prevValue);
+
+    p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, _text, DateTimeOffset.UtcNow, _scope));
+  }
+
+  public void Error(string _text, Exception _ex, string? _scope = null)
+  {
+    if (_text is null)
+      throw new ArgumentNullException(paramName: nameof(_text));
     if (_ex is null)
       throw new ArgumentNullException(paramName: nameof(_ex));
 
-    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, prevValue) => ++prevValue);
+    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, _prevValue) => ++_prevValue);
 
-    p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, $"{text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTime.UtcNow, name));
+    p_buffer.Enqueue(new LogEntry(LogEntryType.ERROR, $"{_text}\n({_ex.GetType()}) {_ex.Message}\n{new StackTrace(_ex, 1, true)}", DateTimeOffset.UtcNow, _scope));
   }
 
-  public void Warn(string text, string? name = null)
+  public void ErrorJson<T>(string _text, T _object, string? _scope = null) where T : notnull
   {
-    if (text is null)
-      throw new ArgumentNullException(paramName: nameof(text));
+    p_stats.AddOrUpdate(LogEntryType.ERROR, 1, (_, _prevValue) => ++_prevValue);
 
-    p_stats.AddOrUpdate(LogEntryType.WARN, 1, (_, prevValue) => ++prevValue);
+    var entry = new LogEntry(
+      LogEntryType.ERROR,
+      $"{_text}{Environment.NewLine}{JsonSerializer.Serialize(_object, p_jsonSerializerOptions)}",
+      DateTimeOffset.UtcNow,
+      _scope);
 
-    p_buffer.Enqueue(new LogEntry(LogEntryType.WARN, text, DateTime.UtcNow, name));
+    p_buffer.Enqueue(entry);
   }
 
-  public void NewEvent(LogEntryType type, string text)
+  public long GetEntriesCount(LogEntryType _type)
   {
-    if (type == LogEntryType.INFO)
-      Info(text);
-    else if (type == LogEntryType.WARN)
-      Warn(text);
-    else if (type == LogEntryType.ERROR)
-      Error(text);
-  }
-
-  public long GetEntriesCount(LogEntryType type)
-  {
-    p_stats.TryGetValue(type, out long value);
+    p_stats.TryGetValue(_type, out long value);
     return value;
   }
 
-  public NamedLogger this[string name] => new(this, name);
+  public ILogger this[string _scope] => new NamedLogger(this, _scope);
 
-  protected virtual void Dispose(bool disposing)
+  protected virtual void Dispose(bool _disposing)
   {
     if (!p_disposedValue)
     {
-      if (disposing)
+      if (_disposing)
       {
         p_timer.Dispose();
         Flush();
@@ -154,7 +173,7 @@ public class FileLogger : ILoggerDisposable
 
   public void Dispose()
   {
-    Dispose(disposing: true);
+    Dispose(_disposing: true);
     GC.SuppressFinalize(this);
   }
 
@@ -185,7 +204,6 @@ public class FileLogger : ILoggerDisposable
     }
   }
 
-  private void Timer_Elapsed(object _, ElapsedEventArgs __) => Flush();
-
+  private void Timer_Elapsed(object? _, ElapsedEventArgs __) => Flush();
 
 }

@@ -1,13 +1,8 @@
-﻿#nullable enable
-using JustLogger.Interfaces;
+﻿using JustLogger.Interfaces;
 
-namespace JustLogger
+namespace JustLogger;
+
+public static class Extensions
 {
-    public static class Extensions
-    {
-        public static NamedLogger GetNamedLog(this ILogger logger, string name)
-        {
-            return new(logger, name);
-        }
-    }
+  public static NamedLogger GetNamedLog(this ILogger _logger, string _name) => new(_logger, _name);
 }

@@ -1,6 +1,5 @@
 ﻿using JustLogger.Interfaces;
 using JustLogger.Toolkit;
-using Newtonsoft.Json.Linq;
 using System;
 
 namespace JustLogger;
@@ -21,50 +20,27 @@ public class NamedLogger : ILogger
       p_name = $"{namedLogger.p_name} | {_name}";
   }
 
-  public void Info(string _text, string? _overrideName = null)
+  public void Info(string _text, string? _overrideName = null) => p_logger.Info(_text, _overrideName ?? p_name);
+
+  public void InfoJson<T>(string _text, T _object, string? _name = null) where T : notnull => p_logger.InfoJson(_text, _object, _name ?? p_name);
+
+  public void Warn(string _text, string? _overrideName = null) => p_logger.Warn(_text, _overrideName ?? p_name);
+
+  public void WarnJson<T>(string _text, T _object, string? _name = null) where T : notnull => p_logger.WarnJson(_text, _object, _name ?? p_name);
+
+  public void Error(string _text, string? _overrideName = null) => p_logger.Error(_text, _overrideName ?? p_name);
+
+  public void Error(string _text, Exception _ex, string? _overrideName = null) => p_logger.Error(_text, _ex, _overrideName ?? p_name);
+
+  public void ErrorJson<T>(string _text, T _object, string? _name = null) where T : notnull => p_logger.ErrorJson(_text, _object, _name ?? p_name);
+
+  public long GetEntriesCount(LogEntryType _type)
   {
-    p_logger.Info(_text, _overrideName ?? p_name);
+    return p_logger.GetEntriesCount(_type);
   }
 
-  public void InfoJson(string _text, JToken _object, string? _name = null)
-  {
-    p_logger.InfoJson(_text, _object, _name ?? p_name);
-  }
+  public ILogger this[string _scope] => new NamedLogger(this, _scope);
 
-  public void Warn(string _text, string? _overrideName = null)
-  {
-    p_logger.Warn(_text, _overrideName ?? p_name);
-  }
+  public void Flush() => p_logger.Flush();
 
-  public void Error(string _text, string? _overrideName = null)
-  {
-    p_logger.Error(_text, _overrideName ?? p_name);
-  }
-
-  public void Error(string _text, Exception _ex, string? _overrideName = null)
-  {
-    p_logger.Error(_text, _ex, _overrideName ?? p_name);
-  }
-
-  public void NewEvent(LogEntryType _type, string _text)
-  {
-    if (_type == LogEntryType.INFO)
-      Info(_text);
-    else if (_type == LogEntryType.WARN)
-      Warn(_text);
-    else if (_type == LogEntryType.ERROR)
-      Error(_text);
-  }
-
-  public long GetEntriesCount(LogEntryType type)
-  {
-    return p_logger.GetEntriesCount(type);
-  }
-
-  public NamedLogger this[string name] => new(this, name);
-
-  public void Flush()
-  {
-    p_logger.Flush();
-  }
 }
