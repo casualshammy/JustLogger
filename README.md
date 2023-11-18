@@ -1,5 +1,5 @@
 # JustLogger
-![GitHub Workflow Status](https://img.shields.io/github/workflow/status/casualshammy/JustLogger/publish-nuget)
+![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/casualshammy/JustLogger/publish-nuget.yml)
 ![Nuget](https://img.shields.io/nuget/v/JustLogger)
 ![Nuget](https://img.shields.io/nuget/dt/JustLogger)
 
